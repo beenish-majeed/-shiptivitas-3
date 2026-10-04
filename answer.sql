@@ -1,24 +1,18 @@
 -- ============================================================
--- SHIPTIVITAS MODULE 3
--- Analytics - Analyse the latest feature releases
+-- SHIPTIVITAS ANALYTICS
+-- Feature: Kanban Board
+-- Release date: 2018-06-02
 --
--- Kanban Board release date: 2018-06-02
---
--- Key finding:
--- Average daily active users increased from 3.63 before the
--- Kanban Board release to 11.79 after the release.
--- This is approximately a 3.25x increase (+225%).
---
--- Note: this shows correlation, not proof that the Kanban Board
--- alone caused the increase.
+-- This file contains the SQL solution for:
+-- 1. Daily active users before and after the feature release
+-- 2. Average daily active users by period
+-- 3. Daily status changes by card
 -- ============================================================
 
 
 -- ============================================================
 -- QUERY 1
--- DAILY ACTIVE USERS BEFORE AND AFTER KANBAN BOARD
---
--- Use this result to create the daily DAU time-series graph.
+-- Daily active users before and after Kanban Board release
 -- ============================================================
 
 SELECT
@@ -36,7 +30,7 @@ ORDER BY day;
 
 -- ============================================================
 -- QUERY 2
--- AVERAGE DAILY ACTIVE USERS BEFORE VS AFTER
+-- Average daily active users before vs after release
 -- ============================================================
 
 SELECT
@@ -60,9 +54,32 @@ ORDER BY period;
 
 -- ============================================================
 -- QUERY 3
--- STATUS CHANGES BY CARD
---
--- Initial card creation is excluded because oldStatus is NULL.
+-- Daily number of status changes by card
+-- ============================================================
+
+SELECT
+    date(h.timestamp, 'unixepoch') AS day,
+    c.id AS card_id,
+    c.name AS card_name,
+    COUNT(*) AS status_changes
+FROM card_change_history h
+JOIN card c
+    ON c.id = h.cardID
+WHERE h.oldStatus IS NOT NULL
+  AND h.oldStatus <> h.newStatus
+GROUP BY
+    day,
+    c.id,
+    c.name
+ORDER BY
+    day,
+    status_changes DESC;
+
+
+-- ============================================================
+-- QUERY 4
+-- Total status changes by card
+-- Useful for identifying cards/workflows with the most activity.
 -- ============================================================
 
 SELECT
@@ -74,71 +91,79 @@ JOIN card c
     ON c.id = h.cardID
 WHERE h.oldStatus IS NOT NULL
   AND h.oldStatus <> h.newStatus
-GROUP BY c.id, c.name
-ORDER BY status_changes DESC;
+GROUP BY
+    c.id,
+    c.name
+ORDER BY
+    status_changes DESC;
 
 
 -- ============================================================
--- DATA-BACKED INSIGHTS
+-- KEY FINDINGS
 --
--- 1. Hypothesis:
---    The Kanban Board increased user engagement by making work
---    progress easier to visualize and manage.
+-- Average DAU before Kanban Board: 3.63
+-- Average DAU after Kanban Board: 11.79
 --
---    Expected Impact:
---    Higher and more consistent daily active usage.
+-- This represents approximately:
+--   3.25x higher average DAU
+--   approximately 225% increase
 --
---    What the feature is:
---    A visual board that organizes cards by workflow status,
---    allowing users to see and update work progress.
+-- The card with the highest number of recorded status changes
+-- was Kutch-Mueller (card 187), with 5 changes.
 --
+-- Note:
+-- The increase in DAU happened after the Kanban Board release,
+-- but this analysis alone does not prove that the feature caused
+-- the increase. Other factors may have contributed.
+-- ============================================================
+
+
+-- ============================================================
+-- ACTIONABLE IDEA 1
 --
--- 2. Hypothesis:
---    Making workflow changes easier and more visible can encourage
---    users to interact with cards more frequently.
+-- Hypothesis:
+-- Making workflow progress visually clear encourages users
+-- to return more frequently.
 --
---    Expected Impact:
---    More repeat sessions and higher DAU through regular workflow
---    management.
+-- Expected Impact:
+-- Higher repeat usage and higher daily active users.
 --
---    What the feature is:
---    Cards can move between workflow statuses, providing a simple
---    visual representation of progress.
+-- What the feature is:
+-- Improve the Kanban Board with clearer visual progress,
+-- lane counts, and an obvious "what needs attention" view.
+-- ============================================================
+
+
+-- ============================================================
+-- ACTIONABLE IDEA 2
 --
+-- Hypothesis:
+-- Users are more likely to return when they can quickly see
+-- cards that require action or have recently changed status.
 --
--- 3. Hypothesis:
---    Cards with frequent status changes represent highly active
---    workflows and can be used to identify behaviours worth
---    encouraging across the product.
+-- Expected Impact:
+-- More repeat sessions and increased daily active users.
 --
---    Expected Impact:
---    Increase engagement by making successful workflow patterns
---    easier for users to discover and repeat.
+-- What the feature is:
+-- Add a "Needs Attention" view showing cards that recently
+-- changed status or are waiting for the user's next action.
+-- ============================================================
+
+
+-- ============================================================
+-- ACTIONABLE IDEA 3
 --
---    What the feature is:
---    The product records card status transitions in
---    card_change_history, allowing teams to analyse workflow
---    activity.
+-- Hypothesis:
+-- Cards with frequent status changes represent highly active
+-- workflows and can be used to identify opportunities for
+-- engagement features.
 --
+-- Expected Impact:
+-- Encourage users to interact with active cards more often,
+-- increasing recurring usage and DAU.
 --
--- KEY DATA POINTS
---
--- Before Kanban Board average DAU: 3.63
--- After Kanban Board average DAU: 11.79
--- Approximate increase: 225%
--- Approximate multiplier: 3.25x
---
--- Highest observed status-change card:
--- Kutch-Mueller (card 187): 5 status changes
---
--- Other highly active cards:
--- Osinski Inc: 4
--- O'Kon Group: 4
--- Boehm, West and Oberbrunner: 4
--- O'Keefe Inc: 4
---
--- Caution:
--- The increase in DAU coincides with the Kanban Board release but
--- does not establish causation. Other product or user-growth
--- factors may also have contributed.
+-- What the feature is:
+-- Add recent activity/history to each card, showing status
+-- changes and the latest activity so users can immediately
+-- understand what has changed.
 -- ============================================================
